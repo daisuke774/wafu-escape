@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>和風の部屋からの脱出</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet" />
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+      * { box-sizing: border-box; }
+      :root{
+        --bg:#efe9db; --panel:#fffdf6; --panel2:#f7f1e2; --ink:#2b2118; --ink-soft:#5c4f40;
+        --line:#d8cbb0; --accent:#a63a26; --accent-ink:#fff7ec; --indigo:#31435c; --gold:#b8862f;
+        --shadow:0 10px 30px rgba(60,40,20,.18);
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#16120e; --panel:#251d15; --panel2:#2d2318; --ink:#f2e8d5; --ink-soft:#c9b995;
+          --line:#4a3b28; --accent:#d96a4b; --accent-ink:#1d130c; --indigo:#9db4cc; --gold:#d9a84e;
+          --shadow:0 10px 30px rgba(0,0,0,.5);
+          color-scheme: dark;
+        }
+      }
+      html,body{ margin:0; padding:0; }
+      body{
+        background:var(--bg); color:var(--ink);
+        font-family:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN",system-ui,sans-serif;
+        -webkit-font-smoothing:antialiased;
+      }
+      .wrap{ max-width:880px; margin:0 auto; padding:14px 14px 28px; }
+      header.top{
+        display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-bottom:10px;
+      }
+      header.top h1{
+        font-family:"Shippori Mincho B1","Hiragino Mincho ProN",serif; font-weight:800;
+        font-size:clamp(20px,4.6vw,28px); margin:0; letter-spacing:.04em; flex:1 1 auto;
+      }
+      header.top h1 .seal{
+        display:inline-block; background:var(--accent); color:var(--accent-ink);
+        font-size:.52em; padding:.28em .34em; border-radius:4px; vertical-align:.32em; margin-right:.5em; letter-spacing:.1em;
+      }
+      .stats{ display:flex; gap:8px; flex-wrap:wrap; }
+      .stat{
+        background:var(--panel); border:1px solid var(--line); border-radius:8px;
+        padding:4px 10px; font-size:13px; font-weight:700; min-height:36px; display:flex; align-items:center; gap:6px;
+      }
+      .stat span{ color:var(--ink-soft); font-weight:500; font-size:11px; letter-spacing:.08em; }
+      .actions{ display:flex; gap:8px; }
+      .btn{
+        appearance:none; border:1px solid var(--line); background:var(--panel); color:var(--ink);
+        border-radius:8px; padding:8px 14px; font:inherit; font-weight:700; font-size:14px; cursor:pointer; min-height:40px;
+      }
+      .btn:hover{ border-color:var(--gold); }
+      .btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+      .btn.primary:hover{ filter:brightness(1.07); }
+      .btn:disabled{ opacity:.45; cursor:default; }
+
+      /* ---------- Stage / room ---------- */
+      .stage-frame{
+        background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:8px; box-shadow:var(--shadow);
+      }
+      .stage{
+        position:relative; width:100%; aspect-ratio:16/11.4; border-radius:8px; overflow:hidden;
+        background:#e9dcbf; user-select:none; -webkit-user-select:none; touch-action:manipulation;
+      }
+      @media (max-width:560px){ .stage{ aspect-ratio:4/4.1; } }
+      .wall{ position:absolute; left:0; right:0; top:0; height:64%;
+        background:
+          linear-gradient(90deg, rgba(120,84,50,.16) 0 2px, transparent 2px) 0 0/ 25% 100%,
+          linear-gradient(#eee0c2,#e6d5b2);
+      }
+      .wall::after{ content:""; position:absolute; left:0; right:0; bottom:0; height:10px; background:#7a5638; box-shadow:0 2px 3px rgba(0,0,0,.25); }
+      .floor{ position:absolute; left:0; right:0; bottom:0; height:36%;
+        background:
+          repeating-linear-gradient(90deg, transparent 0 calc(25% - 3px), #67784f calc(25% - 3px) 25%),
+          repeating-linear-gradient(0deg, transparent 0 calc(50% - 3px), #67784f calc(50% - 3px) 50%),
+          linear-gradient(#c9b978,#bfae67);
+      }
+      .floor::before{ content:""; position:absolute; inset:0; background:repeating-linear-gradient(93deg, rgba(90,70,20,.07) 0 3px, transparent 3px 9px); }
+
+      .obj{ position:absolute; }
+      /* tokonoma */
+      .tokonoma{ left:3%; top:6%; width:26%; height:52%; background:#dcc9a0; border:6px solid #6f4c30; border-bottom:none; box-shadow:inset 0 0 0 3px rgba(90,60,30,.25), inset 0 -14px 24px rgba(90,60,30,.22); }
+      .tokonoma .scroll-mini{ position:absolute; left:50%; top:5%; transform:translateX(-50%); width:44%; height:64%; background:#f7efdb; border:2px solid #8a6a45; border-top:8px solid #4d3a26; border-bottom:8px solid #4d3a26; display:flex; align-items:center; justify-content:center; }
+      .tokonoma .scroll-mini i{ font-style:normal; font-family:"Shippori Mincho B1",serif; writing-mode:vertical-rl; font-size:clamp(10px,2.4vw,17px); color:#33302a; letter-spacing:.3em; }
+      .tokonoma .vase{ position:absolute; right:9%; bottom:5%; width:17%; height:30%; background:linear-gradient(90deg,#33505e,#4a7284 45%,#2c4653); border-radius:46% 46% 40% 40%/60% 60% 34% 34%; }
+      .tokonoma .vase::before{ content:""; position:absolute; left:38%; top:-16%; width:24%; height:18%; background:#223c47; border-radius:3px; }
+      .tokonoma .vase::after{ content:""; position:absolute; left:50%; top:-52%; width:3px; height:38%; background:#5d7351; transform:rotate(14deg); box-shadow:7px -4px 0 -1px #b65b74, -6px -2px 0 -1px #cf8296; border-radius:2px; }
+      /* fusuma closet */
+      .fusuma{ left:31.5%; top:8%; width:17%; height:50%; background:linear-gradient(90deg,#efe3c6 49%,#8a6a45 49% 51%,#eadbbd 51%); border:5px solid #6f4c30; border-bottom:none; }
+      .fusuma::after{ content:""; position:absolute; top:52%; left:0; right:0; height:3px; background:rgba(111,76,48,.5); }
+      .fusuma .pull{ position:absolute; top:47%; width:9%; height:11%; border-radius:50%; background:#4d3a26; }
+      .fusuma .pull.l{ right:55%; } .fusuma .pull.r{ left:55%; }
+      /* shoji door (exit) */
+      .door{ right:4%; top:5%; width:23%; height:56%; background:#f4ecd4; border:7px solid #5d3f27; border-bottom:none; box-shadow:inset 0 0 0 2px rgba(93,63,39,.35); }
+      .door::before{ content:""; position:absolute; inset:0; background:
+        repeating-linear-gradient(90deg, transparent 0 calc(33.3% - 2px), rgba(93,63,39,.75) calc(33.3% - 2px) 33.3%),
+        repeating-linear-gradient(0deg, transparent 0 calc(20% - 2px), rgba(93,63,39,.75) calc(20% - 2px) 20%); }
+      .door .plate{ position:absolute; left:50%; top:8%; transform:translateX(-50%); background:#5d3f27; color:#f4ecd4; font-family:"Shippori Mincho B1",serif; font-size:clamp(9px,2vw,13px); padding:3px 10px; border-radius:3px; letter-spacing:.35em; text-indent:.35em; z-index:2; }
+      .door .keyhole{ position:absolute; right:12%; top:52%; width:11%; aspect-ratio:1; border-radius:50%; background:#3a2a18; box-shadow:inset 0 0 0 3px #b8862f; z-index:2; }
+      /* tansu */
+      .tansu{ right:5%; bottom:12%; width:27%; height:27%; background:linear-gradient(#7c4f30,#6e452a); border:4px solid #4d3a26; border-radius:4px; box-shadow:0 6px 10px rgba(50,30,10,.35); }
+      .tansu::before{ content:""; position:absolute; left:0; right:0; top:48%; height:3px; background:#4d3a26; }
+      .tansu::after{ content:""; position:absolute; top:0; bottom:0; left:49%; width:3px; background:rgba(77,58,38,.65); }
+      .tansu .handle{ position:absolute; width:16%; height:9%; border:3px solid #2e2013; border-top:none; border-radius:0 0 20px 20px; top:20%; }
+      .tansu .handle.a{ left:16%; } .tansu .handle.b{ right:16%; } .tansu .handle.c{ left:42%; top:70%; }
+      /* lantern */
+      .andon{ left:5%; bottom:13%; width:10.5%; height:24%; }
+      .andon .shade{ position:absolute; inset:8% 6% 12%; background:linear-gradient(#fdf3d3,#f3dfae); border:3px solid #4d3a26; border-radius:6px; box-shadow:0 0 26px 8px rgba(255,196,90,.45); animation:flicker 3.2s ease-in-out infinite; }
+      .andon .shade::before{ content:""; position:absolute; inset:0; background:repeating-linear-gradient(0deg, transparent 0 calc(25% - 2px), rgba(77,58,38,.4) calc(25% - 2px) 25%); }
+      .andon .base{ position:absolute; left:0; right:0; bottom:2%; height:7%; background:#4d3a26; border-radius:3px; }
+      @keyframes flicker{ 0%,100%{ filter:brightness(1);} 45%{ filter:brightness(1.07);} 60%{ filter:brightness(.96);} }
+      /* table + zabuton */
+      .table{ left:36%; bottom:9%; width:30%; height:15%; }
+      .table .top{ position:absolute; left:0; right:0; top:12%; height:34%; background:linear-gradient(#8a5c36,#74492a); border-radius:50%/60%; box-shadow:0 5px 6px rgba(50,30,10,.35); border:2px solid #54371e; }
+      .table .leg{ position:absolute; bottom:0; width:6%; height:56%; background:#54371e; }
+      .table .leg.l{ left:14%; } .table .leg.r{ right:14%; }
+      .table .pot{ position:absolute; left:38%; top:-24%; width:24%; height:38%; }
+      .zabuton{ left:41.5%; bottom:2.5%; width:19%; height:7.5%; background:linear-gradient(#3c4f6e,#31435c); border-radius:8px; box-shadow:inset 0 0 0 3px rgba(255,255,255,.14), 0 3px 5px rgba(50,40,10,.3); }
+      .zabuton::after{ content:""; position:absolute; inset:22% 8%; border:1.5px dashed rgba(255,255,255,.35); border-radius:5px; }
+
+      .hotspot{
+        position:absolute; background:transparent; border:2px solid transparent; border-radius:10px; cursor:pointer; padding:0; min-height:44px; z-index:5;
+      }
+      .hotspot:hover, .hotspot:focus-visible{ border-color:rgba(166,58,38,.85); background:rgba(255,248,225,.16); outline:none; }
+      .hotspot .tag{
+        position:absolute; left:50%; bottom:-4px; transform:translate(-50%,100%); white-space:nowrap;
+        background:rgba(38,26,16,.88); color:#fdf3d3; font-size:11px; font-weight:700; padding:3px 8px; border-radius:20px; letter-spacing:.06em; pointer-events:none;
+      }
+      @media (hover:none){ .hotspot .tag{ opacity:.92; } }
+      @media (hover:hover){ .hotspot .tag{ opacity:0; transition:opacity .15s; } .hotspot:hover .tag, .hotspot:focus-visible .tag{ opacity:1; } }
+
+      /* ---------- Message & inventory ---------- */
+      .msg{
+        margin-top:10px; background:var(--panel); border:1px solid var(--line); border-left:6px solid var(--gold);
+        border-radius:10px; padding:12px 14px; min-height:64px; font-size:15px; line-height:1.75; box-shadow:var(--shadow);
+      }
+      .msg b{ color:var(--accent); }
+      .inv{ margin-top:10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+      .inv .inv-label{ font-size:12px; font-weight:900; letter-spacing:.14em; color:var(--ink-soft); }
+      .slot{
+        min-width:118px; min-height:44px; border:1.5px dashed var(--line); border-radius:10px; background:var(--panel2);
+        display:flex; align-items:center; gap:8px; padding:6px 10px; font-size:13.5px; font-weight:700;
+      }
+      .slot.filled{ border-style:solid; border-color:var(--gold); background:var(--panel); }
+      .slot .ic{ font-size:19px; line-height:1; }
+      .slot.empty{ color:var(--ink-soft); font-weight:500; border-style:dashed; }
+
+      /* ---------- Overlays ---------- */
+      .overlay{
+        position:fixed; inset:0; background:rgba(24,16,8,.62); display:none; align-items:center; justify-content:center; padding:14px; z-index:40;
+      }
+      .overlay.open{ display:flex; }
+      .sheet{
+        background:var(--panel); color:var(--ink); border-radius:14px; max-width:520px; width:100%; max-height:92dvh; overflow:auto;
+        padding:20px; box-shadow:var(--shadow); border:1px solid var(--line);
+      }
+      .sheet h2{ font-family:"Shippori Mincho B1",serif; margin:0 0 6px; font-size:21px; letter-spacing:.03em; }
+      .sheet p{ line-height:1.8; font-size:14.5px; margin:8px 0; }
+      .sheet .close-row{ display:flex; justify-content:flex-end; margin-top:14px; gap:8px; flex-wrap:wrap; }
+      .closeup{
+        background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:14px; margin:10px 0; text-align:center;
+      }
+      .memo{
+        background:#fdf6dd; color:#3a2c17; border:1px solid #d9c48a; border-radius:4px; padding:12px 14px;
+        font-family:"Shippori Mincho B1",serif; line-height:2; font-size:15px; text-align:left; box-shadow:2px 3px 0 rgba(120,90,30,.18);
+      }
+      @media (prefers-color-scheme: dark){ .memo{ background:#3a2f1a; color:#f2e3bb; border-color:#6d5a2e; } }
+      .dial-row{ display:flex; gap:10px; justify-content:center; margin:12px 0 4px; flex-wrap:wrap; }
+      .dial{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+      .dial .num{
+        width:52px; height:58px; display:flex; align-items:center; justify-content:center; background:var(--panel);
+        border:2px solid var(--ink-soft); border-radius:8px; font-size:28px; font-weight:900; font-family:"Shippori Mincho B1",serif;
+      }
+      .dial button{ width:52px; min-height:38px; font-size:16px; }
+      .dial .season{ font-size:11px; font-weight:900; letter-spacing:.2em; color:var(--ink-soft); }
+      .big-emoji{ font-size:52px; line-height:1.2; }
+      .petals{ position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+      .petal{ position:absolute; top:-4%; width:13px; height:10px; background:#e79fb4; border-radius:80% 4px 80% 4px; opacity:.9; animation:fall linear forwards; }
+      @keyframes fall{ to{ transform:translateY(105vh) rotate(320deg); } }
+      @media (prefers-reduced-motion: reduce){
+        .andon .shade{ animation:none; } .petal{ animation:none; display:none; }
+      }
+      footer.note{ margin-top:14px; font-size:12px; color:var(--ink-soft); line-height:1.7; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <h1><span class="seal">脱出</span>和風の部屋からの脱出</h1>
+        <div class="stats" aria-label="進行状況">
+          <div class="stat"><span>TIME</span><span id="statTime" style="color:var(--ink);font-size:13px;">00:00</span></div>
+          <div class="stat"><span>手数</span><span id="statMoves" style="color:var(--ink);font-size:13px;">0</span></div>
+          <div class="stat"><span>ヒント</span><span id="statHints" style="color:var(--ink);font-size:13px;">0 回</span></div>
+        </div>
+        <div class="actions">
+          <button class="btn" id="hintBtn" type="button">ヒント</button>
+          <button class="btn" id="restartBtn" type="button">最初から</button>
+        </div>
+      </header>
+
+      <div class="stage-frame">
+        <div class="stage" id="stage" aria-label="和室の見取り図。気になる場所をタップして調べられます">
+          <div class="wall"></div>
+          <div class="floor"></div>
+
+          <div class="obj tokonoma" aria-hidden="true">
+            <div class="scroll-mini"><i>花鳥風月</i></div>
+            <div class="vase"></div>
+          </div>
+          <div class="obj fusuma" aria-hidden="true"><span class="pull l"></span><span class="pull r"></span></div>
+          <div class="obj door" aria-hidden="true"><span class="plate">出口</span><span class="keyhole"></span></div>
+          <div class="obj tansu" aria-hidden="true"><span class="handle a"></span><span class="handle b"></span><span class="handle c"></span></div>
+          <div class="obj andon" aria-hidden="true"><div class="shade"></div><div class="base"></div></div>
+          <div class="obj table" aria-hidden="true">
+            <svg class="pot" viewBox="0 0 60 44" aria-hidden="true"><ellipse cx="30" cy="30" rx="19" ry="12" fill="#3d3d42"/><path d="M11 28 Q2 22 8 15" stroke="#3d3d42" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M24 19 L30 8 L37 19" stroke="#2c2c30" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="30" cy="7" r="3.4" fill="#2c2c30"/></svg>
+            <div class="top"></div><div class="leg l"></div><div class="leg r"></div>
+          </div>
+          <div class="obj zabuton" aria-hidden="true"></div>
+
+          <button class="hotspot" type="button" data-open="scroll" style="left:4.5%;top:7%;width:15%;height:38%;" aria-label="掛け軸を調べる"><span class="tag">掛け軸</span></button>
+          <button class="hotspot" type="button" data-open="vase" style="left:19%;top:32%;width:9%;height:22%;" aria-label="花瓶を調べる"><span class="tag">花瓶</span></button>
+          <button class="hotspot" type="button" data-open="fusuma" style="left:31.5%;top:8%;width:17%;height:50%;" aria-label="押し入れの襖を調べる"><span class="tag">押し入れ</span></button>
+          <button class="hotspot" type="button" data-open="door" style="right:4%;top:5%;width:23%;height:56%;" aria-label="出口の障子戸を調べる"><span class="tag">出口の戸</span></button>
+          <button class="hotspot" type="button" data-open="tansu" style="right:5%;bottom:12%;width:27%;height:27%;" aria-label="箪笥を調べる"><span class="tag">箪笥</span></button>
+          <button class="hotspot" type="button" data-open="andon" style="left:4.5%;bottom:12%;width:11.5%;height:26%;" aria-label="行灯を調べる"><span class="tag">行灯</span></button>
+          <button class="hotspot" type="button" data-open="table" style="left:35%;bottom:8%;width:32%;height:19%;" aria-label="ちゃぶ台を調べる"><span class="tag">ちゃぶ台</span></button>
+          <button class="hotspot" type="button" data-open="zabuton" style="left:40.5%;bottom:1.5%;width:21%;height:10%;" aria-label="座布団を調べる"><span class="tag">座布団</span></button>
+        </div>
+      </div>
+
+      <div class="msg" id="msg" role="status" aria-live="polite">目が覚めると、知らない和室にいた。戸には鍵がかかっている。部屋を調べて、ここから出よう。</div>
+
+      <div class="inv" aria-label="持ち物">
+        <span class="inv-label">持ち物</span>
+        <div id="invSlots" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      </div>
+
+      <footer class="note">遊び方：気になる場所をタップ（クリック）して調べます。手に入れた鍵は、対応する場所を調べると使えます。行き詰まったら「ヒント」を押してください（段階的に詳しくなります）。</footer>
+    </div>
+
+    <!-- Close-up modal -->
+    <div class="overlay" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="sheet">
+        <h2 id="modalTitle">調べる</h2>
+        <div id="modalBody"></div>
+        <div class="close-row" id="modalActions"></div>
+      </div>
+    </div>
+
+    <!-- Intro -->
+    <div class="overlay open" id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+      <div class="sheet" style="text-align:center;">
+        <div class="big-emoji" aria-hidden="true">🏯</div>
+        <h2 id="introTitle" style="font-size:24px;">和風の部屋からの脱出</h2>
+        <p>気がつくと、畳の香りのする和室に閉じ込められていた。<br />出口の戸には鍵がかかり、開かない。</p>
+        <p>部屋のあちこちを調べて、手がかりと鍵を見つけよう。<br />謎は全部で<b>3つの仕掛け</b>。じっくり観察すれば、必ず解けるはず。</p>
+        <div class="close-row" style="justify-content:center;">
+          <button class="btn primary" id="startBtn" type="button" style="font-size:16px;padding:10px 28px;">脱出をはじめる</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Clear -->
+    <div class="overlay" id="clear" role="dialog" aria-modal="true" aria-labelledby="clearTitle">
+      <div class="petals" id="petals" aria-hidden="true"></div>
+      <div class="sheet" style="text-align:center; position:relative;">
+        <div class="big-emoji" aria-hidden="true">🌸</div>
+        <h2 id="clearTitle" style="font-size:26px;">脱出成功！</h2>
+        <p>鍵がカチリと回り、障子戸が開いた。<br />外の風が、畳の香りをさらっていく。</p>
+        <p id="clearStats" style="font-weight:700;"></p>
+        <div class="close-row" style="justify-content:center;">
+          <button class="btn primary" id="againBtn" type="button">もう一度遊ぶ</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      "use strict";
+      var $ = function(id){ return document.getElementById(id); };
+      var S;
+      function freshState(){
+        return {
+          started:false, cleared:false, moves:0, hints:0, startAt:0, elapsed:0, timer:null,
+          hasBrass:false, topOpened:false, drawerUnlocked:false, boxOpen:false, hasIron:false,
+          fusumaOpened:false, dials:[0,0,0,0], hintLevel:0
+        };
+      }
+      S = freshState();
+
+      var CODE = "3241";
+      var SEASONS = [
+        { name:"春", flower:"桜", count:3, color:"#e58aa5", center:"#f5d76e" },
+        { name:"夏", flower:"朝顔", count:2, color:"#5b7fb8", center:"#f2e6a2" },
+        { name:"秋", flower:"菊", count:4, color:"#d9a441", center:"#8a5a1d" },
+        { name:"冬", flower:"椿", count:1, color:"#b83a32", center:"#f5d76e" }
+      ];
+
+      function fmtTime(sec){
+        var m = Math.floor(sec/60), s = sec%60;
+        return (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
+      }
+      function renderStats(){
+        $("statTime").textContent = fmtTime(S.elapsed);
+        $("statMoves").textContent = S.moves;
+        $("statHints").textContent = S.hints + " 回";
+      }
+      function renderInv(){
+        var box = $("invSlots"); box.innerHTML = "";
+        var items = [];
+        if (S.hasBrass) items.push({ icon:"🗝️", name:"真鍮の小鍵" });
+        if (S.hasIron) items.push({ icon:"🔑", name:"鉄の鍵" });
+        if (!items.length){
+          var d = document.createElement("div"); d.className = "slot empty"; d.textContent = "（まだ何もない）"; box.appendChild(d); return;
+        }
+        items.forEach(function(it){
+          var d = document.createElement("div"); d.className = "slot filled";
+          var ic = document.createElement("span"); ic.className = "ic"; ic.textContent = it.icon;
+          var nm = document.createElement("span"); nm.textContent = it.name;
+          d.appendChild(ic); d.appendChild(nm); box.appendChild(d);
+        });
+      }
+      function say(html){ $("msg").innerHTML = html; }
+      function bump(){ S.moves++; renderStats(); }
+
+      /* ---------- modal helpers ---------- */
+      function openSheet(title, bodyHTML, actions){
+        $("modalTitle").textContent = title;
+        $("modalBody").innerHTML = bodyHTML;
+        var row = $("modalActions"); row.innerHTML = "";
+        (actions || []).forEach(function(a){
+          var b = document.createElement("button");
+          b.type = "button"; b.className = "btn" + (a.primary ? " primary" : "");
+          b.textContent = a.label;
+          b.addEventListener("click", a.onClick);
+          row.appendChild(b);
+        });
+        var close = document.createElement("button");
+        close.type = "button"; close.className = "btn"; close.textContent = "閉じる";
+        close.addEventListener("click", closeSheet);
+        row.appendChild(close);
+        $("modal").classList.add("open");
+      }
+      function closeSheet(){ $("modal").classList.remove("open"); }
+      $("modal").addEventListener("click", function(e){ if (e.target === $("modal")) closeSheet(); });
+
+      /* ---------- scroll painting (SVG, flowers generated so counts are exact) ---------- */
+      function flowerSVG(cx, cy, r, petal, center){
+        var s = "", i, ang, px, py;
+        for (i=0;i<5;i++){
+          ang = (Math.PI*2*i/5) - Math.PI/2;
+          px = cx + Math.cos(ang)*r*0.62; py = cy + Math.sin(ang)*r*0.62;
+          s += '<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+(r*0.55).toFixed(1)+'" fill="'+petal+'"/>';
+        }
+        s += '<circle cx="'+cx+'" cy="'+cy+'" r="'+(r*0.34).toFixed(1)+'" fill="'+center+'"/>';
+        return s;
+      }
+      function scrollSVG(){
+        var W = 440, H = 190, pw = W/4, s = "";
+        s += '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="春夏秋冬の花が描かれた掛け軸" style="display:block;">';
+        s += '<rect x="2" y="2" width="'+(W-4)+'" height="'+(H-4)+'" fill="#f8f1dc" stroke="#8a6a45" stroke-width="3"/>';
+        SEASONS.forEach(function(se, idx){
+          var x0 = idx*pw;
+          if (idx>0) s += '<line x1="'+x0+'" y1="8" x2="'+x0+'" y2="'+(H-8)+'" stroke="#c9b586" stroke-width="1.5" stroke-dasharray="4 4"/>';
+          s += '<text x="'+(x0+pw/2)+'" y="30" text-anchor="middle" font-size="19" font-weight="700" fill="#3a332a" font-family="Shippori Mincho B1, serif">'+se.name+'</text>';
+          s += '<text x="'+(x0+pw/2)+'" y="'+(H-12)+'" text-anchor="middle" font-size="12.5" fill="#7a6a4d">'+se.flower+'</text>';
+          var pos = [[0.32,0.42],[0.68,0.40],[0.5,0.62],[0.3,0.72],[0.7,0.7]];
+          for (var i=0;i<se.count;i++){
+            var p = pos[i];
+            s += flowerSVG(x0+pw*p[0], H*p[1], 15, se.color, se.center);
+          }
+          s += '<path d="M '+(x0+14)+' '+(H-34)+' Q '+(x0+pw/2)+' '+(H-58)+' '+(x0+pw-14)+' '+(H-36)+'" stroke="#5d7351" stroke-width="2.5" fill="none"/>';
+        });
+        s += "</svg>";
+        return s;
+      }
+
+      /* ---------- close-ups ---------- */
+      var views = {
+        scroll: function(){
+          bump();
+          openSheet("掛け軸", '<div class="closeup">'+scrollSVG()+'</div>' +
+            "<p>四季の花が描かれた掛け軸だ。春・夏・秋・冬の順に区切られ、それぞれ花が描かれている。花の<b>輪の数</b>が、季節ごとに違うようだ。</p>",
+            []);
+          say("掛け軸には四季の花。季節ごとに、花の数が違う。");
+        },
+        vase: function(){
+          bump();
+          openSheet("花瓶", '<div class="closeup"><div class="big-emoji" aria-hidden="true">🏺</div><p>床の間の花瓶。一輪の梅が挿してある。</p></div>' +
+            "<p>瓶の底をのぞいても、何も入っていない。水が少し濁っているだけだ。</p>", []);
+          say("花瓶には梅が一輪。とくに仕掛けはなさそうだ。");
+        },
+        fusuma: function(){
+          bump();
+          if (!S.fusumaOpened){
+            S.fusumaOpened = true;
+            openSheet("押し入れ",
+              '<div class="closeup"><div class="big-emoji" aria-hidden="true">🛏️</div><p>襖がスッと開いた。中には布団が積まれている。</p></div>' +
+              '<div class="memo">布団のあいだに挟まっていた紙：<br />「かぎは 足もとに ねむる。<br />　はなは 輪のかずを かぞえよ。」</div>' +
+              "<p>布団の奥も探したが、他にめぼしい物はない。</p>", []);
+            say("押し入れの紙：<b>「かぎは足もとにねむる。はなは輪のかずをかぞえよ」</b>。");
+          } else {
+            openSheet("押し入れ", "<p>布団が積まれているだけだ。紙の内容はもう覚えた。</p>", []);
+            say("押し入れには布団だけだ。");
+          }
+        },
+        zabuton: function(){
+          bump();
+          if (!S.hasBrass){
+            openSheet("座布団",
+              '<div class="closeup"><div class="big-emoji" aria-hidden="true">🟦</div><p>紺色の座布団。座り心地が良さそうだ。</p></div><p>「かぎは足もとにねむる」――まさか、この下か？</p>',
+              [{ label:"座布団をめくる", primary:true, onClick:function(){
+                  S.hasBrass = true; renderInv(); bump();
+                  openSheet("座布団", '<div class="closeup"><div class="big-emoji" aria-hidden="true">🗝️</div><p><b>真鍮の小鍵</b>を見つけた！</p></div><p>座布団の下に、小さな真鍮の鍵が隠されていた。これでどこかの錠が開きそうだ。</p>', []);
+                  say("<b>真鍮の小鍵</b>を手に入れた。");
+                } }]);
+          } else {
+            openSheet("座布団", "<p>座布団の下はもう何もない。鍵はポケットの中だ。</p>", []);
+            say("座布団の下は空っぽだ。");
+          }
+        },
+        andon: function(){
+          bump();
+          openSheet("行灯",
+            '<div class="closeup"><div class="big-emoji" aria-hidden="true">🏮</div><p>紙の行灯が、ほのかに揺れている。</p></div>' +
+            "<p>明かりにかざすと、部屋のものがよく見える。謎に詰まったら、落ち着いて周りを観察しよう。掛け軸の花も、この明かりなら数えやすい。</p>", []);
+          say("行灯の明かりが揺れている。落ち着いて観察しよう。");
+        },
+        table: function(){
+          bump();
+          openSheet("ちゃぶ台",
+            '<div class="closeup"><div class="big-emoji" aria-hidden="true">🍵</div><p>鉄瓶と湯呑みが置かれている。お茶はもう冷めている。</p></div>' +
+            "<p>湯呑みを持ち上げると、裏に小さく文字が書かれていた。<b>「順は、春より始めよ」</b></p>", []);
+          say("湯呑みの裏：<b>「順は、春より始めよ」</b>。");
+        },
+        tansu: function(){
+          bump();
+          var body = '<div class="closeup"><div class="big-emoji" aria-hidden="true">🗄️</div><p>重厚な箪笥。引き出しが2段ある。</p></div>';
+          var actions = [];
+          if (!S.topOpened){
+            actions.push({ label:"上の段を開ける", onClick:function(){
+              S.topOpened = true; bump();
+              openSheet("箪笥・上の段",
+                '<div class="memo">「下の段には 小箱あり。<br />　小箱の錠は 四つの数字。<br />　数字のありかは 掛け軸の花。」</div><p>上の段には、このメモだけが入っていた。</p>', []);
+              say("箪笥のメモ：<b>小箱の錠は4つの数字。手がかりは掛け軸の花</b>。");
+            }});
+          }
+          if (!S.drawerUnlocked){
+            if (S.hasBrass){
+              actions.push({ label:"下の段を小鍵で開ける", primary:true, onClick:function(){
+                S.drawerUnlocked = true; bump(); views.tansuBox();
+              }});
+              body += "<p>下の段には鍵がかかっている。真鍮の小鍵が使えそうだ。</p>";
+            } else {
+              body += "<p>下の段は<b>鍵がかかっていて開かない</b>。小さな鍵穴がある。</p>";
+            }
+          } else if (!S.boxOpen){
+            actions.push({ label:"小箱を調べる", primary:true, onClick:function(){ views.tansuBox(); } });
+            body += "<p>下の段は開いている。中にはダイヤル錠の小箱がある。</p>";
+          } else if (!S.hasIron){
+            actions.push({ label:"小箱を調べる", primary:true, onClick:function(){ views.tansuBox(); } });
+            body += "<p>小箱は開いている。</p>";
+          } else {
+            body += "<p>小箱は空だ。鉄の鍵は手の中にある。</p>";
+          }
+          openSheet("箪笥", body, actions);
+          say(S.drawerUnlocked ? "箪笥の下の段は開いている。" : "箪笥の下の段には鍵がかかっている。");
+        },
+        tansuBox: function(){
+          if (S.boxOpen && !S.hasIron){
+            openSheet("ダイヤル小箱",
+              '<div class="closeup"><div class="big-emoji" aria-hidden="true">🔑</div><p>小箱の中に、<b>鉄の鍵</b>が入っていた！</p></div><p>重みのある鉄の鍵だ。出口の戸の鍵穴に合うかもしれない。</p>',
+              [{ label:"鉄の鍵を取る", primary:true, onClick:function(){
+                  S.hasIron = true; renderInv(); bump(); closeSheet();
+                  say("<b>鉄の鍵</b>を手に入れた。出口の戸へ行こう。");
+                }}]);
+            return;
+          }
+          if (S.boxOpen){
+            openSheet("ダイヤル小箱", "<p>小箱は空っぽだ。</p>", []);
+            return;
+          }
+          var dialsHTML = '<div class="dial-row">';
+          SEASONS.forEach(function(se, i){
+            dialsHTML += '<div class="dial"><span class="season">'+se.name+'</span>' +
+              '<button type="button" class="btn" data-dial="'+i+'" data-dir="1" aria-label="'+se.name+'の数字を増やす">▲</button>' +
+              '<div class="num" id="dialNum'+i+'">'+S.dials[i]+'</div>' +
+              '<button type="button" class="btn" data-dial="'+i+'" data-dir="-1" aria-label="'+se.name+'の数字を減らす">▼</button></div>';
+          });
+          dialsHTML += "</div>";
+          openSheet("ダイヤル小箱",
+            '<div class="closeup"><div class="big-emoji" aria-hidden="true">🧰</div><p>4つのダイヤルがついた小箱。季節の名が添えられている。</p></div>' +
+            "<p>掛け軸の花の数を、<b>春・夏・秋・冬</b>の順に合わせるのだろう。</p>" + dialsHTML,
+            [{ label:"錠を開ける", primary:true, onClick:function(){
+                bump();
+                if (S.dials.join("") === CODE){
+                  S.boxOpen = true; views.tansuBox();
+                  say("カチリ、と小箱の錠が開いた！");
+                } else {
+                  var body = $("modalBody");
+                  var err = body.querySelector(".dial-error");
+                  if (!err){
+                    err = document.createElement("p");
+                    err.className = "dial-error";
+                    err.style.cssText = "color:var(--accent);font-weight:700;";
+                    body.appendChild(err);
+                  }
+                  err.textContent = "……開かない。数字が違うようだ。掛け軸の花を、もう一度よく数えてみよう。";
+                  say("小箱は開かなかった。数字が違うようだ。");
+                }
+              }}]);
+          bindDials();
+        },
+        door: function(){
+          bump();
+          if (S.hasIron){
+            openSheet("出口の障子戸",
+              '<div class="closeup"><div class="big-emoji" aria-hidden="true">🚪</div><p>鍵穴に、鉄の鍵がぴたりと合いそうだ。</p></div><p>長かった――いや、鍵を差し込めば、外に出られるはずだ。</p>',
+              [{ label:"鉄の鍵で開ける", primary:true, onClick:function(){ escapeRoom(); } }]);
+            say("鉄の鍵が鍵穴に合いそうだ。");
+          } else {
+            openSheet("出口の障子戸",
+              '<div class="closeup"><div class="big-emoji" aria-hidden="true">🔒</div><p>しっかり鍵がかかっている。押しても引いても開かない。</p></div><p>鍵穴は鉄製らしい。合う鍵がこの部屋のどこかにあるはずだ。</p>', []);
+            say("出口は鍵がかかっている。合う鍵を探そう。");
+          }
+        }
+      };
+
+      function bindDials(){
+        var btns = document.querySelectorAll("[data-dial]");
+        Array.prototype.forEach.call(btns, function(b){
+          b.addEventListener("click", function(){
+            var i = parseInt(b.getAttribute("data-dial"), 10);
+            var d = parseInt(b.getAttribute("data-dir"), 10);
+            S.dials[i] = (S.dials[i] + d + 10) % 10;
+            var el = $("dialNum"+i); if (el) el.textContent = S.dials[i];
+          });
+        });
+      }
+
+      /* ---------- hints ---------- */
+      function currentStage(){
+        if (!S.hasBrass) return 0;
+        if (!S.drawerUnlocked) return 1;
+        if (!S.boxOpen) return 2;
+        if (!S.hasIron) return 3;
+        return 4;
+      }
+      var HINTS = [
+        ["まずは足もと。座れるものの下を調べてみよう。", "押し入れの紙にもあった通り――鍵は「足もと」、つまり座布団の下に眠っている。", "答え：ちゃぶ台の前の「座布団」を調べ、「座布団をめくる」と真鍮の小鍵が手に入る。"],
+        ["小鍵が合いそうな家具はどれだろう。", "鍵穴のある家具は箪笥。下の段の引き出しに小鍵を使ってみよう。", "答え：「箪笥」を調べ、「下の段を小鍵で開ける」を選ぶ。"],
+        ["小箱の数字は、掛け軸の花の数が教えてくれる。", "春・夏・秋・冬の順に、花の輪の数を数えよう。湯呑みの裏の「順は、春より始めよ」もその意味だ。", "答え：春の桜3・夏の朝顔2・秋の菊4・冬の椿1。ダイヤルを「3・2・4・1」に合わせる。"],
+        ["小箱は開いた。中身を取り忘れていないか？", "小箱の中の鉄の鍵を取ろう。箪笥から「小箱を調べる」→「鉄の鍵を取る」。", "答え：箪笥の下の段の小箱から、鉄の鍵を取る。"],
+        ["鉄の鍵は手に入れた。あとは使うだけだ。", "出口の障子戸を調べて、鉄の鍵で開けよう。", "答え：「出口の戸」を調べ、「鉄の鍵で開ける」で脱出。"]
+      ];
+      $("hintBtn").addEventListener("click", function(){
+        if (!S.started || S.cleared) return;
+        var stage = currentStage();
+        var lvl = Math.min(S.hintLevel, 2);
+        S.hints++; S.hintLevel++;
+        renderStats();
+        openSheet("ヒント（"+(lvl+1)+" / 3）", "<p>"+HINTS[stage][lvl]+"</p>" + (lvl<2 ? "<p style='color:var(--ink-soft);font-size:13px;'>もう一度「ヒント」を押すと、さらに詳しくなります。</p>" : "<p style='color:var(--ink-soft);font-size:13px;'>これが最後のヒントです。</p>"), []);
+      });
+
+      /* ---------- game flow ---------- */
+      function startTimer(){
+        if (S.timer) clearInterval(S.timer);
+        S.timer = setInterval(function(){
+          if (!S.cleared){ S.elapsed = Math.floor((Date.now()-S.startAt)/1000); renderStats(); }
+        }, 500);
+      }
+      function escapeRoom(){
+        if (S.startAt) S.elapsed = Math.floor((Date.now()-S.startAt)/1000);
+        S.cleared = true;
+        if (S.timer) clearInterval(S.timer);
+        closeSheet();
+        $("clearStats").textContent = "タイム " + fmtTime(S.elapsed) + " ／ 手数 " + S.moves + " ／ ヒント " + S.hints + " 回";
+        $("clear").classList.add("open");
+        spawnPetals();
+        say("やった――<b>脱出成功！</b>");
+      }
+      function spawnPetals(){
+        var box = $("petals"); box.innerHTML = "";
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        for (var i=0;i<22;i++){
+          var p = document.createElement("span"); p.className = "petal";
+          p.style.left = (Math.random()*100) + "%";
+          p.style.animationDuration = (2.6 + Math.random()*2.8) + "s";
+          p.style.animationDelay = (Math.random()*1.6) + "s";
+          p.style.transform = "rotate(" + (Math.random()*180) + "deg)";
+          box.appendChild(p);
+        }
+      }
+      function resetGame(){
+        if (S.timer) clearInterval(S.timer);
+        S = freshState();
+        renderStats(); renderInv();
+        closeSheet(); $("clear").classList.remove("open");
+        $("intro").classList.add("open");
+        say("目が覚めると、知らない和室にいた。戸には鍵がかかっている。部屋を調べて、ここから出よう。");
+      }
+      $("startBtn").addEventListener("click", function(){
+        $("intro").classList.remove("open");
+        S.started = true; S.startAt = Date.now(); S.elapsed = 0; S.hintLevel = 0;
+        startTimer(); renderStats();
+        say("脱出開始。まずは部屋をくまなく調べてみよう。気になる場所をタップ。");
+      });
+      $("againBtn").addEventListener("click", resetGame);
+      $("restartBtn").addEventListener("click", function(){ if (S.started) resetGame(); });
+
+      document.querySelectorAll(".hotspot").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          if (!S.started || S.cleared) return;
+          S.hintLevel = 0;
+          var key = btn.getAttribute("data-open");
+          if (views[key]) views[key]();
+        });
+      });
+
+      renderStats(); renderInv();
+    </script>
+  </body>
+</html>
